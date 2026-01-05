@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokročilý editor roláží</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans flex items-center justify-center min-h-screen py-8">
+
+    <div class="container mx-auto p-8 bg-white rounded-lg shadow-xl max-w-full px-4 sm:px-6 lg:px-8">
+        <header class="flex justify-between items-center mb-6 pb-4 border-b">
+            <h1 class="text-3xl font-bold text-gray-800">Pokročilý editor</h1>
+            <a href="index.html" class="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-300">&larr; Zpět na klasický editor</a>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Levý sloupec: Všechny ovládací prvky -->
+            <div class="lg:w-1/3 lg:border-r lg:pr-8">
+                <!-- Pokročilý editor -->
+                <div id="editor-advanced">
+                    <div class="flex flex-col items-end mb-4">
+                        <div class="flex gap-2">
+                            <button id="undo-btn" class="flex items-center gap-2 text-gray-700 hover:text-gray-900 bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <span>↺</span> Zpět
+                            </button>
+                            <button id="clear-history-btn" class="flex items-center gap-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled title="Smazat historii">
+                                <span>🗑️</span>
+                            </button>
+                        </div>
+                        <!-- Log historie -->
+                        <div id="history-log-container" class="hidden mt-2 w-full max-w-xs bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden z-10">
+                            <div class="bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-500 border-b">Historie změn</div>
+                            <ul id="history-list" class="max-h-32 overflow-y-auto text-xs text-gray-600 py-1">
+                                <!-- Položky historie se zde vygenerují JS -->
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-8">
+                        <!-- Nahrávání a náhledy -->
+                        <div>
+                            <div class="space-y-6">
+                                <div>
+                                    <input type="file" id="multi-upload-input" multiple accept="image/*" class="hidden">
+                                    <button id="multi-upload-btn" class="w-full bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg text-lg shadow-md hover:shadow-lg transition-all duration-300">
+                                        Nahrát obrázky
+                                    </button>
+                                    <p id="image-status" class="text-sm text-gray-600 mt-2">Prosím, vyberte sudý počet obrázků (2, 4, 6, 8, nebo 10).</p>
+                                    
+                                    <div class="mt-4 pt-4 border-t border-gray-200">
+                                        <input type="file" id="import-project-input" accept=".json" class="hidden">
+                                        <button id="import-project-btn" class="w-full bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg text-sm shadow transition-all duration-300">
+                                            📂 Nahrát uložený projekt (JSON)
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-lg font-medium text-gray-700 mb-2">Náhledy nahraných obrázků</label>
+                                    <div id="image-previews-container" class="grid grid-cols-5 gap-3 mt-2 p-2 bg-gray-50 rounded-lg border min-h-[80px]"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Editor proužků -->
+                        <div>
+                                                <div id="strip-editor-container" class="hidden">
+                                                    <div class="flex justify-between items-center mb-2">
+                                                        <label class="block text-lg font-medium text-gray-700">Editor proužků</label>
+                                                    </div>
+                                                    <div class="w-full bg-gray-50 rounded-lg shadow-inner p-2 border">
+                                                        <canvas id="schematic-preview-canvas" class="w-full" height="100"></canvas>
+                                                    </div>
+                                                    <div id="strip-pairs-editor" class="mt-2 space-y-3 p-3 bg-gray-50 border rounded-lg"></div>
+                                                    <button id="add-strip-pair-btn" class="mt-2 text-sm text-indigo-600 hover:text-indigo-800">+ Přidat další typ proužku</button>
+                                                </div>                        </div>
+                    </div>
+                </div>
+
+                <!-- Společné ovládací prvky -->
+                <div id="common-controls">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 border-t pt-6 mt-6">
+                        <div>
+                            <label for="strips-slider" class="block text-lg font-medium text-gray-700">Počet proužků</label>
+                            <input type="range" id="strips-slider" min="2" max="200" value="20" step="2" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2">
+                            <div class="text-center text-sm text-gray-600 mt-1"><span id="strips-value" class="font-bold">20</span></div>
+                        </div>
+                        <div>
+                            <label for="width-pattern" class="block text-lg font-medium text-gray-700">Rozložení</label>
+                            <select id="width-pattern" class="mt-2 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="uniform">Rovnoměrné</option>
+                                <option value="center-in">Širší uprostřed</option>
+                                <option value="center-out">Užší uprostřed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="orientation" class="block text-lg font-medium text-gray-700">Směr</label>
+                            <select id="orientation" class="mt-2 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="vertical">Svisle</option>
+                                <option value="horizontal">Vodorovně</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="strip-mode" class="block text-lg font-medium text-gray-700">Režim proužků</label>
+                            <select id="strip-mode" class="mt-2 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="alternating">Střídavé</option>
+                                <option value="paired">Párové</option>
+                            </select>
+                        </div>
+
+                        <div id="pair-boundary-container" class="hidden space-y-4">
+                            <div>
+                                <label for="pair-boundary-start-slider" class="block text-lg font-medium text-gray-700">Počáteční hranice</label>
+                                <input type="range" id="pair-boundary-start-slider" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2">
+                                <div class="text-center text-sm text-gray-600 mt-1"><span id="pair-boundary-start-value" class="font-bold">50</span>%</div>
+                            </div>
+                            <div>
+                                <label for="pair-boundary-end-slider" class="block text-lg font-medium text-gray-700">Koncová hranice</label>
+                                <input type="range" id="pair-boundary-end-slider" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2">
+                                <div class="text-center text-sm text-gray-600 mt-1"><span id="pair-boundary-end-value" class="font-bold">50</span>%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center mb-6 gap-4">
+                        <button id="save-project-btn" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-md hover:shadow-lg transition-shadow duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            Uložit projekt (JSON)
+                        </button>
+                        <button id="export-btn" class="bg-emerald-500 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-md hover:shadow-lg transition-shadow duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                            Stáhnout roláž (JPG)
+                        </button>
+                    </div>
+
+
+                </div>
+            </div>
+
+            <!-- Pravý sloupec: Výsledek -->
+            <div class="lg:w-2/3">
+                <h2 class="text-2xl font-semibold text-center mb-4">Finální výsledek</h2>
+                <div class="w-full bg-gray-200 rounded-lg shadow-inner p-2">
+                    <canvas id="canvas" class="w-full rounded-md"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
