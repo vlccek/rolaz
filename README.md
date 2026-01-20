@@ -32,5 +32,10 @@ Autor: **Jakub Vlk**
 Zdrojový kód: [github.com/vlccek/rolaz](https://github.com/vlccek/rolaz)
 
 
+## link na statistiky používání
+- https://vlccek.goatcounter.com/
+
 # Galerie
 ![](./rolaz1.jpg)
+![](./rolaz_advanced2.jpg)
+![](./rolaz_simple_editor.jpg)
